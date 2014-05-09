@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Security.Cryptography;
 using System.Text;
 using System.Web;
 using Newtonsoft.Json;
@@ -11,8 +11,21 @@ using Seq.Apps.LogEvents;
 
 namespace Seq.App.Ontime
 {
-    public partial class OntimeTicketReactor : Reactor, ISubscribeTo<LogEventData>
+    [SeqApp("OnTime Incident",
+        Description = "Posts seq event an incident in ontime")]
+    public class OntimeTicketReactor : Reactor, ISubscribeTo<LogEventData>
     {
+        /// <summary>
+        ///  Seq Server Address
+        /// </summary>
+        /// <value>
+        ///     Seq server address
+        /// </value>
+        [SeqAppSetting(
+            DisplayName = "Seq Server Address",
+            HelpText = "URL of the seq server. This appears in notes field so that you can get back to the event from ontime.")]
+        public string SeqUrl { get; set; }
+
         /// <summary>
         ///     Gets the host.
         /// </summary>
@@ -20,22 +33,9 @@ namespace Seq.App.Ontime
         ///     The host.
         /// </value>
         [SeqAppSetting(
-            DisplayName = "Host (url)",
-            HelpText = "URL of the ontime instance (do not include http:// or path).")]
+            DisplayName = "OnTime Host (url)",
+            HelpText = "URL of OnTime (do not include /api/ at the end of the path).")]
         public string Host { get; set; }
-
-        
-        /// <summary>
-        ///     Gets the full pathname of the file.
-        /// </summary>
-        /// <value>
-        ///     The full pathname of the file.
-        /// </value>
-        [SeqAppSetting(
-            DisplayName = "Path",
-            IsOptional = true,
-            HelpText = "Defaults to none. Additional path on OnTime URL.")]
-        public string Path { get; set; }
 
         /// <summary>
         ///     Gets the name of the project.
@@ -46,7 +46,7 @@ namespace Seq.App.Ontime
         [SeqAppSetting(
             DisplayName = "Project Id",
             IsOptional = false,
-            HelpText = "Project Id to post OnTime issue.")]
+            HelpText = "Project Id to post OnTime incident.")]
         public int ProjectId { get; set; }
        
         /// <summary>
@@ -104,56 +104,71 @@ namespace Seq.App.Ontime
             try
             {
                 AuthorizedUser = FetchAccessToken();
-
-                if (DefectAlreadyExistsInOntime(evt.Id))
-                {
-                    return;
-                }
-
-                PostDefect(evt);
+                PostIncident(evt);
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error while creating a defect in Ontime");
+                Log.Error(ex, "Error while creating incident in Ontime");
             }
           
         }
 
         AuthResponse AuthorizedUser { get; set; }
 
-        private void PostDefect(Event<LogEventData> evt)
+        private void PostIncident(Event<LogEventData> evt)
         {
-            var body = FormatDefaultBody(evt);
+            var message = evt.Data.RenderedMessage;
+            var messageId = ComputeId(message);
+            
+            if (IncidentAlreadyExistsInOntime(messageId))
+            {
+                return;
+            }
+            var subject = messageId + " - " + evt.Data.RenderedMessage;
+            var body = string.Format("{0} - {1} Exception Event Id #{2}\r\nException:\r\n{3}", evt.TimestampUtc.ToLocalTime(), evt.Data.Level, evt.Id, evt.Data.Exception);
 
-            var subject = evt.Id + " - " + evt.Data.RenderedMessage;
+            var notes = SeqUrl + "/#/now?filter=@Id%20%3D%3D%20%22" + evt.Id + "%22";
 
-            var defect = new Defect
+            var incident = new Incident
             {
                 Name = subject,
                 Description = body,
                 Project = new Project { Id = ProjectId },
-                Assigned_To = new User {Id = AuthorizedUser.Data.Id}
+                Assigned_To = new User {Id = AuthorizedUser.Data.Id},
+                Notes = notes
             };
-            var ontimeDefect = new OnTimeDefect
+            var onTimeIncident = new OnTimeIncident
             {
-                Item = defect
+                Item = incident
             };
-            var url = "/api/v2/defects?access_token=" + AuthorizedUser.Access_Token;
+            var parameters = new Dictionary<string, object> {
+				 {"access_token", AuthorizedUser.Access_Token},
+			};
+
+            var url = GetUrl("/api/v2/incidents", parameters);
             using (var client = new HttpClient())
             {
-                 client.PostAsJsonAsync(url, ontimeDefect);
+                 var result = client.PostAsJsonAsync(url, onTimeIncident).Result;
+                result.EnsureSuccessStatusCode();
             }
         }
 
-        private bool DefectAlreadyExistsInOntime(string id)
+        private static string ComputeId(string title)
+        {
+            MD5 md5 = MD5.Create();
+            return BitConverter.ToString(md5.ComputeHash(Encoding.UTF8.GetBytes(title))).Replace("-", string.Empty);
+        }
+
+        private bool IncidentAlreadyExistsInOntime(string id)
         {
             var parameters = new Dictionary<string, object> {
 				{ "project_id", ProjectId },
 				{ "search_field", "name" },
 				{"search_string", id},
-				{"columns", id},
+				{"columns", "id"},
+                {"access_token", AuthorizedUser.Access_Token},
 			};
-            var url = GetUrl("/api/v2/defects?access_token=" + AuthorizedUser.Access_Token, parameters);
+            var url = GetUrl("/api/v2/incidents", parameters);
             using (var client = new HttpClient())
             {
                 var response = client.GetAsync(url).Result;
@@ -182,41 +197,7 @@ namespace Seq.App.Ontime
                 return auth;
             }
         }
-
-        string FormatDefaultBody(Event<LogEventData> evt)
-        {
-            var body = new StringBuilder();
-            body.Append("{{@Timestamp}} [{{@Level}}] {{@RenderedMessage}}");
-
-            if (evt.Data.Properties != null)
-            {
-                body.AppendLine();
-
-                foreach (var property in evt.Data.Properties.OrderBy(p => p.Key))
-                {
-                    body.AppendFormat(" {0} = {{{{{1}}}}}", property.Key, property.Key);
-                    body.AppendLine();
-                }
-            }
-
-            if (evt.Data.Exception != null)
-            {
-                body.AppendLine();
-                body.Append("{{@Exception}}");
-            }
-
-            return FormatTemplate(body.ToString(), evt);
-        }
-
-        string FormatTemplate(string template, Event<LogEventData> evt)
-        {
-            var tokens = StacheParser.ParseStache(template);
-            var output = new StringWriter();
-            foreach (var tok in tokens)
-                tok.Render(output, evt);
-            return output.ToString();
-        }
-
+        
         public string GetUrl(string resource, IEnumerable<KeyValuePair<string, object>> parameters = null)
         {
             var apiCallUrl = new UriBuilder(Host);

@@ -63,13 +63,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="QuickStache\IdentifierTemplateToken.cs" />
-    <Compile Include="OnTimeDefect.cs" />
+    <Compile Include="OnTimeIncident.cs" />
     <Compile Include="OntimeTicketReactor.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="QuickStache\StacheParser.cs" />
-    <Compile Include="QuickStache\TemplateToken.cs" />
-    <Compile Include="QuickStache\TextTemplateToken.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />

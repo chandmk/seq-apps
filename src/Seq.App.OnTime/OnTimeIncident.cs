@@ -2,17 +2,18 @@
 
 namespace Seq.App.Ontime
 {
-    public class OnTimeDefect
+    public class OnTimeIncident
     {
-        public Defect Item { get; set; }
+        public Incident Item { get; set; }
     }
 
-    public class Defect
+    public class Incident
     {
         public string Name { get; set; }
         public string Description { get; set; }
         public User Assigned_To { get; set; }
         public Project Project { get; set; }
+        public string Notes { get; set; }
     }
 
     public class ProjectList
@@ -35,7 +36,7 @@ namespace Seq.App.Ontime
 
     public class SearchResult
     {
-        public List<Defect> Data { get; set; }
+        public List<Incident> Data { get; set; }
     }
 
     public class User
