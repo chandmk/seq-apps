@@ -110,14 +110,13 @@ namespace Seq.App.Ontime
             {
                 Log.Error(ex, "Error while creating incident in Ontime");
             }
-          
         }
 
         AuthResponse AuthorizedUser { get; set; }
 
         private void PostIncident(Event<LogEventData> evt)
         {
-            var message = evt.Data.RenderedMessage;
+            var message = evt.Data.Exception ?? evt.Data.RenderedMessage;
             var messageId = ComputeId(message);
             
             if (IncidentAlreadyExistsInOntime(messageId))
@@ -153,10 +152,10 @@ namespace Seq.App.Ontime
             }
         }
 
-        private static string ComputeId(string title)
+        private static string ComputeId(string input)
         {
             MD5 md5 = MD5.Create();
-            return BitConverter.ToString(md5.ComputeHash(Encoding.UTF8.GetBytes(title))).Replace("-", string.Empty);
+            return BitConverter.ToString(md5.ComputeHash(Encoding.UTF8.GetBytes(input))).Replace("-", string.Empty);
         }
 
         private bool IncidentAlreadyExistsInOntime(string id)
