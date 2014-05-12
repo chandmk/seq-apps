@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using Seq.Apps.LogEvents;
 
 namespace Seq.App.Ontime
 {
@@ -14,6 +15,7 @@ namespace Seq.App.Ontime
         public User Assigned_To { get; set; }
         public Project Project { get; set; }
         public string Notes { get; set; }
+        public Priotity Priority { get; set; }
     }
 
     public class ProjectList
@@ -42,5 +44,22 @@ namespace Seq.App.Ontime
     public class User
     {
         public int Id { get; set; }
+    }
+
+    public class Priotity
+    {
+        public int Id { get; set; }
+
+        public static Priotity FromDebugLevel(LogEventLevel level)
+        {
+            int priority = 4; // high
+
+            if (level == LogEventLevel.Information || level == LogEventLevel.Warning || level == LogEventLevel.Verbose)
+            {
+                priority = 2; // low
+            }
+
+            return new Priotity { Id = priority };
+        }
     }
 }

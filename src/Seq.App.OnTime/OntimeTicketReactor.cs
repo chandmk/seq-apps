@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
+using System.Net.Mail;
 using System.Security.Cryptography;
 using System.Text;
 using System.Web;
@@ -118,23 +119,26 @@ namespace Seq.App.Ontime
         {
             var message = evt.Data.Exception ?? evt.Data.RenderedMessage;
             var messageId = ComputeId(message);
-            
+
             if (IncidentAlreadyExistsInOntime(messageId))
             {
                 return;
             }
             var subject = messageId + " - " + evt.Data.RenderedMessage;
-            var body = string.Format("{0} - {1} Exception Event Id #{2}\r\nException:\r\n{3}", evt.TimestampUtc.ToLocalTime(), evt.Data.Level, evt.Id, evt.Data.Exception);
+            var body = string.Format("{0} - {1} Exception Event Id #{2}\r\nException:\r\n{3}",
+                evt.TimestampUtc.ToLocalTime(), evt.Data.Level, evt.Id, evt.Data.Exception);
 
             var notes = SeqUrl + "/#/now?filter=@Id%20%3D%3D%20%22" + evt.Id + "%22";
+
 
             var incident = new Incident
             {
                 Name = subject,
                 Description = body,
-                Project = new Project { Id = ProjectId },
+                Project = new Project {Id = ProjectId},
                 Assigned_To = new User {Id = AuthorizedUser.Data.Id},
-                Notes = notes
+                Notes = notes,
+                Priority = Priotity.FromDebugLevel(evt.Data.Level),
             };
             var onTimeIncident = new OnTimeIncident
             {
