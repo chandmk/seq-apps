@@ -127,10 +127,9 @@ namespace Seq.App.Ontime
             var subject = messageId + " - " + evt.Data.RenderedMessage;
             var body = string.Format("{0} - {1} Exception Event Id #{2}\r\nException:\r\n{3}",
                 evt.TimestampUtc.ToLocalTime(), evt.Data.Level, evt.Id, evt.Data.Exception);
-
-            var notes = SeqUrl + "/#/now?filter=@Id%20%3D%3D%20%22" + evt.Id + "%22";
-
-
+            var surl = SeqUrl + "/#/now?filter=@Id%20%3D%3D%20%22" + evt.Id + "%22";
+            var notes = string.Format("<a href='{0}'>{0}</a>", surl); 
+            
             var incident = new Incident
             {
                 Name = subject,
