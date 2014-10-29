@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
-using System.Net.Mail;
 using System.Security.Cryptography;
 using System.Text;
 using System.Web;
@@ -16,6 +15,10 @@ namespace Seq.App.Ontime
         Description = "Posts seq event an incident in ontime")]
     public class OntimeTicketReactor : Reactor, ISubscribeTo<LogEventData>
     {
+        public OntimeTicketReactor()
+        {
+            SeqEventField = "SeqEventID";
+        }
         /// <summary>
         ///  Seq Server Address
         /// </summary>
@@ -49,6 +52,18 @@ namespace Seq.App.Ontime
             IsOptional = false,
             HelpText = "Project Id to post OnTime incident.")]
         public int ProjectId { get; set; }
+
+        /// <summary>
+        ///     Gets the custom field in ontime that stores SeqEventId.
+        /// </summary>
+        /// <value>
+        ///     The username.
+        /// </value>
+        [SeqAppSetting(
+            DisplayName = "Seq Event Id Field",
+            IsOptional = false,
+            HelpText = "Ontime field that stores Seq Event Id")]
+        public string SeqEventField { get; set; }
        
         /// <summary>
         ///     Gets the username.
@@ -113,9 +128,9 @@ namespace Seq.App.Ontime
             }
         }
 
-        AuthResponse AuthorizedUser { get; set; }
+        public AuthResponse AuthorizedUser { get; set; }
 
-        private void PostIncident(Event<LogEventData> evt)
+        public void PostIncident(Event<LogEventData> evt)
         {
             var message = evt.Data.Exception ?? evt.Data.RenderedMessage;
             var messageId = ComputeId(message);
@@ -124,7 +139,7 @@ namespace Seq.App.Ontime
             {
                 return;
             }
-            var subject = messageId + " - " + evt.Data.RenderedMessage;
+            var subject = evt.Data.RenderedMessage;
             var body = string.Format("{0} - {1} Exception Event Id #{2}\r\nException:\r\n{3}",
                 evt.TimestampUtc.ToLocalTime(), evt.Data.Level, evt.Id, evt.Data.Exception);
             var surl = SeqUrl + "/#/now?filter=@Id%20%3D%3D%20%22" + evt.Id + "%22";
@@ -139,6 +154,9 @@ namespace Seq.App.Ontime
                 Notes = notes,
                 Priority = Priotity.FromDebugLevel(evt.Data.Level),
             };
+
+            incident.Custom_Fields.Add(SeqEventField, messageId);
+
             var onTimeIncident = new OnTimeIncident
             {
                 Item = incident
@@ -146,11 +164,12 @@ namespace Seq.App.Ontime
             var parameters = new Dictionary<string, object> {
 				 {"access_token", AuthorizedUser.Access_Token},
 			};
+            var jsonBody = JsonConvert.SerializeObject(onTimeIncident);
 
-            var url = GetUrl("/api/v2/incidents", parameters);
+            var url = GetUrl("/api/v3/incidents", parameters);
             using (var client = new HttpClient())
             {
-                 var result = client.PostAsJsonAsync(url, onTimeIncident).Result;
+                var result = client.PostAsync(url, new StringContent(jsonBody, null, "application/json")).Result;
                 result.EnsureSuccessStatusCode();
             }
         }
@@ -165,22 +184,23 @@ namespace Seq.App.Ontime
         {
             var parameters = new Dictionary<string, object> {
 				{ "project_id", ProjectId },
-				{ "search_field", "name" },
+				{ "search_field", "custom_fields." + SeqEventField },
 				{"search_string", id},
 				{"columns", "id"},
                 {"access_token", AuthorizedUser.Access_Token},
 			};
-            var url = GetUrl("/api/v2/incidents", parameters);
+            var url = GetUrl("/api/v3/incidents", parameters);
             using (var client = new HttpClient())
             {
                 var response = client.GetAsync(url).Result;
                 var content = response.Content.ReadAsStringAsync().Result;
                 var results = JsonConvert.DeserializeObject<SearchResult>(content);
-                return results.Data.Any();
+                var exists = results.Data.Any();
+                return exists;
             }
         }
 
-        private AuthResponse FetchAccessToken()
+        public AuthResponse FetchAccessToken()
         {
             var parameters = new Dictionary<string, object> {
 				{ "client_id", ClientId },
