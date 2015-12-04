@@ -142,7 +142,7 @@ namespace Seq.App.Ontime
             var subject = evt.Data.RenderedMessage;
             var body = string.Format("{0} - {1} Exception Event Id #{2}\r\nException:\r\n{3}",
                 evt.TimestampUtc.ToLocalTime(), evt.Data.Level, evt.Id, evt.Data.Exception);
-            var surl = SeqUrl + "/#/now?filter=@Id%20%3D%3D%20%22" + evt.Id + "%22";
+            var surl = string.Format(@"{0}/#/events?filter=@Id %3D%3D ""{1}""", SeqUrl, evt.Id);
             var notes = string.Format("<a href='{0}'>{0}</a>", surl); 
             
             var incident = new Incident
@@ -206,14 +206,19 @@ namespace Seq.App.Ontime
 				{ "client_id", ClientId },
 				{ "client_secret", ClientIdSecret },
 				{"grant_type", "password"},
-				{"scope", "read write"},
+			//	{"scope", "read write"},
 				{"username", Username},
 				{"password", Password},
 			};
             var accessUrl = GetUrl("/api/oauth2/token", parameters);
-            using (var client = new HttpClient())
+            var handler = new HttpClientHandler()
+            {
+                AllowAutoRedirect = false
+            };
+            using (var client = new HttpClient(handler))
             {
                 var response = client.GetAsync(accessUrl).Result;
+                response.EnsureSuccessStatusCode();
                 var content = response.Content.ReadAsStringAsync().Result;
                 var auth = JsonConvert.DeserializeObject<AuthResponse>(content);
                 return auth;
