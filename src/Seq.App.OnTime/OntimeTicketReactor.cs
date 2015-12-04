@@ -170,7 +170,12 @@ namespace Seq.App.Ontime
             using (var client = new HttpClient())
             {
                 var result = client.PostAsync(url, new StringContent(jsonBody, null, "application/json")).Result;
-                result.EnsureSuccessStatusCode();
+                if(!result.IsSuccessStatusCode )
+                {
+                    var err = result.Content.ReadAsStringAsync().Result;
+                    throw new ApplicationException(result.ReasonPhrase + "" + err);
+                }
+               // result.EnsureSuccessStatusCode();
             }
         }
 
@@ -206,7 +211,7 @@ namespace Seq.App.Ontime
 				{ "client_id", ClientId },
 				{ "client_secret", ClientIdSecret },
 				{"grant_type", "password"},
-			//	{"scope", "read write"},
+				{"scope", "read write"},
 				{"username", Username},
 				{"password", Password},
 			};
