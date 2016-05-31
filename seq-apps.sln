@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2013
-VisualStudioVersion = 12.0.31101.0
+# Visual Studio 14
+VisualStudioVersion = 14.0.25123.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Seq.App.Ontime", "src\Seq.App.OnTime\Seq.App.Ontime.csproj", "{E8C1B9CA-2A4C-485F-A755-CFA953C65B2E}"
 EndProject
@@ -17,7 +17,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		README.md = README.md
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Seq.App.Ontime.Tests", "..\Seq.App.Ontime.Tests\Seq.App.Ontime.Tests.csproj", "{9B811F8D-0ED5-4A6E-96D7-0DE13E41BECE}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Seq.App.Jira", "Seq.App.Jira\Seq.App.Jira.csproj", "{A21A72DC-35AE-43B9-A842-70A8522D46F3}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -29,10 +29,10 @@ Global
 		{E8C1B9CA-2A4C-485F-A755-CFA953C65B2E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E8C1B9CA-2A4C-485F-A755-CFA953C65B2E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E8C1B9CA-2A4C-485F-A755-CFA953C65B2E}.Release|Any CPU.Build.0 = Release|Any CPU
-		{9B811F8D-0ED5-4A6E-96D7-0DE13E41BECE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{9B811F8D-0ED5-4A6E-96D7-0DE13E41BECE}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{9B811F8D-0ED5-4A6E-96D7-0DE13E41BECE}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{9B811F8D-0ED5-4A6E-96D7-0DE13E41BECE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A21A72DC-35AE-43B9-A842-70A8522D46F3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A21A72DC-35AE-43B9-A842-70A8522D46F3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A21A72DC-35AE-43B9-A842-70A8522D46F3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A21A72DC-35AE-43B9-A842-70A8522D46F3}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
