@@ -49,6 +49,19 @@ namespace Seq.App.Jira
             HelpText = "Project Key to post Jira issue.")]
         public string ProjectKey { get; set; }
 
+
+        /// <summary>
+        ///     Gets the name of the project.
+        /// </summary>
+        /// <value>
+        ///     The name of the project.
+        /// </value>
+        [SeqAppSetting(
+            DisplayName = "Component",
+            IsOptional = false,
+            HelpText = "Component to post Jira issue.")]
+        public string Component { get; set; }
+
         /// <summary>
         ///     Gets the custom field in JIRA that stores SeqEventId.
         /// </summary>
@@ -158,8 +171,10 @@ namespace Seq.App.Jira
                         summary = subject,
                         description = System.Security.SecurityElement.Escape(description),
                         issuetype = new { name = JiraIssueType },
+                        components = new object[1] { new {name = Component}},
                         seqeventfield = messageId
                     };
+
                     var issueText = JsonConvert.SerializeObject(new { fields = fields });
                     issueText = issueText.Replace("seqeventfield", cf);
                     Console.WriteLine(issueText);
@@ -208,7 +223,7 @@ public class Fields
     public string summary { get; set; }
     public string description { get; set; }
     public Issuetype issuetype { get; set; }
-    public string customfield_10425 { get; set; }
+    public Component components{ get; set; }
 }
 
 public class Project
@@ -217,6 +232,11 @@ public class Project
 }
 
 public class Issuetype
+{
+    public string name { get; set; }
+}
+
+public class Component
 {
     public string name { get; set; }
 }
